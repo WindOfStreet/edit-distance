@@ -1,3 +1,5 @@
+from functools import wraps, lru_cache
+from decorator import PrintTime
 
 
 class EditDistance:
@@ -10,34 +12,36 @@ class EditDistance:
         self.all_steps = []     # procedures to convert str1 to str2
 
     def calc_distance(self, str1, str2):
-        """把str1转换为str2的各个步骤"""
-        if not isinstance(str1, str) and isinstance(str2, str):
-            raise TypeError("input must be str type")
+            """把str1转换为str2的各个步骤"""
+            if not isinstance(str1, str) and isinstance(str2, str):
+                raise TypeError("input must be str type")
 
-        if len(str1)==0:
-            return self.itcost*len(str2)
-        if len(str2)==0:
-            return self.rmcost*len(str1)
-        if str1 == str2:
-            return 0
+            if len(str1)==0:
+                return self.itcost*len(str2)
+            if len(str2)==0:
+                return self.rmcost*len(str1)
+            if str1 == str2:
+                return 0
 
-        tail1 = str1[-1]
-        tail2 = str2[-1]
+            tail1 = str1[-1]
+            tail2 = str2[-1]
 
-        # 这里犯下一个错误，为了后面排序方便，引入了距离作为dict的key，忘了同一个距离可能对应多个操作！debug好久...
-        # candidate = {distance:operation}
-        candidate = [(self.calc_distance(str1[:-1], str2) + self.rmcost, ('remove', tail1)),
-                     (self.calc_distance(str1, str2[:-1]) + self.itcost, ('insert', tail2))]
-        if tail1 == tail2:
-            candidate.append((self.calc_distance(str1[:-1], str2[:-1]), ('', '')))
-        else:
-            score = self.calc_distance(str1[:-1], str2[:-1])+self.rpcost
-            candidate.append((score, ('replace', tail2)))
+            # 这里犯下一个错误，为了后面排序方便，引入了距离作为dict的key，忘了同一个距离可能对应多个操作！debug好久...
+            # candidate = {distance:operation}
+            candidate = [(self.calc_distance(str1[:-1], str2) + self.rmcost, ('remove', tail1)),
+                         (self.calc_distance(str1, str2[:-1]) + self.itcost, ('insert', tail2))]
+            if tail1 == tail2:
+                candidate.append((self.calc_distance(str1[:-1], str2[:-1]), ('', '')))
+            else:
+                score = self.calc_distance(str1[:-1], str2[:-1])+self.rpcost
+                candidate.append((score, ('replace', tail2)))
 
-        self.distance, operate = min(candidate, key=lambda x: x[0])
-        self.solution[(str1, str2)] = operate
-        return self.distance
+            self.distance, operate = min(candidate, key=lambda x: x[0])
+            self.solution[(str1, str2)] = operate
+            return self.distance
 
+    @PrintTime
+#    @lru_cache(2**10)
     def parse_results(self, str1, str2):
         self.solution.clear()
         self.calc_distance(str1, str2)
@@ -65,12 +69,12 @@ class EditDistance:
 
 if __name__ == '__main__':
     Calc = EditDistance(1, 1, 5)
-    str1 = 'ting'
-    str2 = 'tong'
-    dist = Calc.calc_distance(str1, str2)
+    str1 = 'woshixiawoshixia'
+    str2 = 'wishixiwishixi'
+    # dist = Calc.calc_distance(str1, str2)
     # for key,val in Calc.solution.items():
     #     print(key,val)
-    Calc.parse_results(str1, str2)
+    Calc.parse_results(Calc, str1, str2)
     print('{}和{}的编辑距离为{}。'.format(str1, str2, Calc.distance))
     # 打印操作步骤
     for item in Calc.all_steps:
